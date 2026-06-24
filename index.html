@@ -109,12 +109,7 @@
     background: rgba(255,255,255,0.15);
   }
 
-  /* 电脑端隐藏触控按键 */
-  .touch-controls { display: none; }
-  @media (hover: none) and (pointer: coarse) {
-    .touch-controls { display: flex; }
-    .keyboard-tip { display: none; }
-  }
+  /* 所有设备都显示触控按键 */
 
   .keyboard-tip {
     margin-top: 8px;
@@ -166,9 +161,8 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// 自适应大小：手机上格子小一点
-const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-const GRID = isMobile ? 16 : 20;
+// 自适应大小：小屏幕格子小一点
+const GRID = Math.min(window.innerWidth, window.innerHeight) < 500 ? 16 : 20;
 const COLS = 25;
 const ROWS = 25;
 canvas.width = COLS * GRID;
@@ -190,18 +184,20 @@ function togglePause() {
   document.getElementById('msg').textContent = paused ? '⏸ 已暂停' : '';
 }
 
-// 触控按钮事件（用 pointerdown 响应更快）
-document.getElementById('btnUp').addEventListener('pointerdown', e => { setDir(0, -1); e.preventDefault(); });
-document.getElementById('btnDown').addEventListener('pointerdown', e => { setDir(0, 1); e.preventDefault(); });
-document.getElementById('btnLeft').addEventListener('pointerdown', e => { setDir(-1, 0); e.preventDefault(); });
-document.getElementById('btnRight').addEventListener('pointerdown', e => { setDir(1, 0); e.preventDefault(); });
-document.getElementById('btnPause').addEventListener('pointerdown', e => { togglePause(); e.preventDefault(); });
-document.getElementById('btnRestart').addEventListener('pointerdown', e => { init(); e.preventDefault(); });
-
-// 阻止触控按键的 click 导致的双重触发和页面缩放
-document.querySelectorAll('.dpad-btn, .action-btn').forEach(btn => {
-  btn.addEventListener('touchstart', e => e.preventDefault());
-});
+// 触控按钮：用 touchstart 响应，同时阻止默认行为防止页面缩放
+document.getElementById('btnUp').addEventListener('touchstart', e => { e.preventDefault(); setDir(0, -1); });
+document.getElementById('btnDown').addEventListener('touchstart', e => { e.preventDefault(); setDir(0, 1); });
+document.getElementById('btnLeft').addEventListener('touchstart', e => { e.preventDefault(); setDir(-1, 0); });
+document.getElementById('btnRight').addEventListener('touchstart', e => { e.preventDefault(); setDir(1, 0); });
+document.getElementById('btnPause').addEventListener('touchstart', e => { e.preventDefault(); togglePause(); });
+document.getElementById('btnRestart').addEventListener('touchstart', e => { e.preventDefault(); init(); });
+// 同时绑定 click 兼容电脑端鼠标点击
+document.getElementById('btnUp').addEventListener('click', e => { e.preventDefault(); setDir(0, -1); });
+document.getElementById('btnDown').addEventListener('click', e => { e.preventDefault(); setDir(0, 1); });
+document.getElementById('btnLeft').addEventListener('click', e => { e.preventDefault(); setDir(-1, 0); });
+document.getElementById('btnRight').addEventListener('click', e => { e.preventDefault(); setDir(1, 0); });
+document.getElementById('btnPause').addEventListener('click', e => { e.preventDefault(); togglePause(); });
+document.getElementById('btnRestart').addEventListener('click', e => { e.preventDefault(); init(); });
 
 // 初始化
 function init() {
