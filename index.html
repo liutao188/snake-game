@@ -337,17 +337,29 @@ function endGame() {
   started = false;
   clearInterval(gameLoop);
 
-  // 短暂延迟，确保触摸事件完全结束
   const head = snake[0];
   const cx = head.x * GRID + GRID / 2;
   const cy = head.y * GRID + GRID / 2;
+  let matchShown = false;
+
+  function showMatch() {
+    if (matchShown) return;
+    matchShown = true;
+    if (fireworksTimer) { clearTimeout(fireworksTimer); fireworksTimer = null; }
+    fireworks = [];
+    showMatchInfo = true;
+    document.getElementById('msg').textContent = '💀 游戏结束！点"开始游戏"再来';
+    draw();
+  }
+
+  // 兜底：3秒后强制显示比赛信息（无论烟花是否播放完）
+  const fallback = setTimeout(showMatch, 3000);
 
   setTimeout(() => {
     createFireworks(cx, cy);
     animateFireworks(() => {
-      showMatchInfo = true;
-      document.getElementById('msg').textContent = '💀 游戏结束！点"开始游戏"再来';
-      draw();
+      clearTimeout(fallback);
+      showMatch();
     });
   }, 50);
 }
@@ -457,27 +469,31 @@ function draw() {
   if (showMatchInfo) {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
-    const bw = Math.min(280, canvas.width * 0.9);
-    const bh = bw * 0.38;
-    const fs = Math.max(10, bw / 22);
-    // 半透明背景
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
-    ctx.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
+    const bw = Math.min(280, canvas.width * 0.92);
+    const bh = Math.max(70, bw * 0.42);
+    const fs = Math.max(11, bw / 20);
+    // 半透明背景 + 圆角
+    const rx = cx - bw / 2, ry = cy - bh / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, bw, bh, 8);
+    ctx.fill();
     ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 2;
-    ctx.strokeRect(cx - bw / 2, cy - bh / 2, bw, bh);
-    // 文字
+    ctx.beginPath();
+    ctx.roundRect(rx, ry, bw, bh, 8);
+    ctx.stroke();
+    // 文字（不用emoji，iOS canvas fillText对国旗emoji支持差）
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${fs}px "Courier New", monospace`;
-    ctx.fillText('🇦🇷 阿根廷 下一场世界杯', cx, cy - fs * 1.6);
+    ctx.fillStyle = '#75b5ff';
+    ctx.font = `bold ${fs}px -apple-system, "PingFang SC", sans-serif`;
+    ctx.fillText('阿根廷 下一场世界杯', cx, cy - fs * 1.2);
     ctx.fillStyle = '#ffd700';
-    ctx.font = `bold ${fs * 1.1}px "Courier New", monospace`;
-    ctx.fillText('6/28  10:00  北京时间', cx, cy + fs * 0.1);
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${fs * 1.1}px "Courier New", monospace`;
-    ctx.fillText('约旦  vs  阿根廷', cx, cy + fs * 1.8);
+    ctx.font = `bold ${fs * 1.15}px -apple-system, "PingFang SC", sans-serif`;
+    ctx.fillText('6/28  10:00  北京时间', cx, cy + fs * 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('约旦  vs  阿根廷', cx, cy + fs * 2.2);
     ctx.textAlign = 'start';
   }
 }
