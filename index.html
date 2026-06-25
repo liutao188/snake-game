@@ -196,6 +196,7 @@ canvas.width = COLS * GRID;
 canvas.height = ROWS * GRID;
 
 let snake, food, direction, nextDirection, score, best, gameOver, paused, gameLoop, started;
+let fireworks = [], fireworksTimer = null;
 
 function setDir(dx, dy) {
   if (gameOver || !started) return;
@@ -217,10 +218,15 @@ function startGame() {
   paused = false;
   document.getElementById('msg').textContent = '';
   clearInterval(gameLoop);
-  gameLoop = setInterval(step, 180);
+  gameLoop = setInterval(step, 250);
 }
 
 function resetGame() {
+  if (fireworksTimer) {
+    clearTimeout(fireworksTimer);
+    fireworksTimer = null;
+  }
+  fireworks = [];
   snake = [
     { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) },
     { x: Math.floor(COLS / 2) - 1, y: Math.floor(ROWS / 2) },
@@ -292,10 +298,11 @@ canvas.addEventListener('touchend', e => {
 });
 
 function spawnFood() {
+  const MARGIN = 2; // 离边框至少2格
   do {
     food = {
-      x: Math.floor(Math.random() * COLS),
-      y: Math.floor(Math.random() * ROWS),
+      x: MARGIN + Math.floor(Math.random() * (COLS - MARGIN * 2)),
+      y: MARGIN + Math.floor(Math.random() * (ROWS - MARGIN * 2)),
     };
   } while (snake.some(s => s.x === food.x && s.y === food.y));
 }
@@ -326,8 +333,75 @@ function endGame() {
   gameOver = true;
   started = false;
   clearInterval(gameLoop);
-  document.getElementById('msg').textContent = '💀 游戏结束！点"开始游戏"再来';
-  draw();
+
+  // 短暂延迟，确保触摸事件完全结束
+  const head = snake[0];
+  const cx = head.x * GRID + GRID / 2;
+  const cy = head.y * GRID + GRID / 2;
+
+  setTimeout(() => {
+    createFireworks(cx, cy);
+    animateFireworks(() => {
+      document.getElementById('msg').textContent = '💀 游戏结束！点"开始游戏"再来';
+      draw();
+    });
+  }, 50);
+}
+
+function createFireworks(cx, cy) {
+  fireworks = [];
+  const colors = [
+    '#FF0000','#FF4500','#FF8C00','#FFD700','#FFFF00',
+    '#ADFF2F','#00FF00','#00FA9A','#00CED1','#1E90FF',
+    '#8A2BE2','#FF00FF','#FF1493','#FF6347','#FFFFFF',
+    '#FFD700','#7FFF00','#00FFFF','#FF69B4'
+  ];
+  const particleCount = 120;
+  for (let i = 0; i < particleCount; i++) {
+    const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.3;
+    const speed = 2.5 + Math.random() * 7;
+    fireworks.push({
+      x: cx,
+      y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 1,
+      decay: 0.01 + Math.random() * 0.025,
+      size: 3 + Math.random() * 6,
+    });
+  }
+}
+
+function animateFireworks(callback) {
+  if (fireworks.length === 0) {
+    if (callback) callback();
+    return;
+  }
+
+  function tick() {
+    let alive = false;
+    for (const p of fireworks) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+      p.life -= p.decay;
+      if (p.life > 0.02) alive = true;
+    }
+
+    draw();
+
+    if (alive) {
+      fireworksTimer = setTimeout(tick, 33);
+    } else {
+      fireworksTimer = null;
+      fireworks = [];
+      if (callback) callback();
+    }
+  }
+
+  tick();
 }
 
 function draw() {
@@ -347,6 +421,17 @@ function draw() {
   ctx.arc(food.x * GRID + GRID / 2, food.y * GRID + GRID / 2, GRID / 2 - 2, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+  // 烟花粒子（画在蛇前面，确保可见）
+  ctx.save();
+  fireworks.forEach(p => {
+    if (p.life <= 0) return;
+    ctx.globalAlpha = Math.min(1, p.life);
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 0;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  });
+  ctx.restore();
+
   snake.forEach((s, i) => {
     const x = s.x * GRID + 1, y = s.y * GRID + 1, size = GRID - 2;
     if (i === 0) {
@@ -376,6 +461,11 @@ document.addEventListener('keydown', e => {
 });
 
 function init() {
+  if (fireworksTimer) {
+    clearTimeout(fireworksTimer);
+    fireworksTimer = null;
+  }
+  fireworks = [];
   snake = [
     { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) },
     { x: Math.floor(COLS / 2) - 1, y: Math.floor(ROWS / 2) },
