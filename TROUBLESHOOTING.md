@@ -40,8 +40,16 @@ https://liutao188.github.io/snake-game/?v=2
 
 本地改完不算，需要 commit + push 到 `main` 分支，GitHub Pages 会自动部署（通常 1-2 分钟内生效）。
 
+## 用户环境
+
+- 安卓手机，Chrome 无痕浏览模式
+- 通过微信收藏夹保存的 GitHub Pages 链接打开
+
 ## 教训
 
 - 静态 HTML 页面要加 `Cache-Control` meta 标签，否则手机浏览器可能永远不拉新版本
 - 页面留一个可见的版本号标记，调试时省很多时间
 - GitHub Pages 项目，改完需要 push 才能生效，本地改了没用
+- GitHub Pages 服务器内容正确但用户看不到更新时，让用户关闭当前标签页，重新打开一个新标签页输入原链接
+- 安卓 Chrome 无痕模式下，尝试关闭当前标签页再重新打开，或加 `?v=N` 参数强制刷新
+- 不要让用户改原链接，保持收藏夹链接不变
